@@ -2,7 +2,7 @@
 # pytest сам найдёт этот файл и запустит все функции начинающиеся с test_
 
 import pytest
-from calculator import add, subtract, multiply, divide
+from calculator import add, subtract, multiply, divide, power, square_root
 
 #Тесты для сложения
 def test_add_positive_numbers():
@@ -47,3 +47,23 @@ def test_divide_by_zero():
     """
     with pytest.raises(ValueError):
         divide(5, 0)
+
+
+# Тесты для новых функций (ветка development)
+
+def test_power():
+    """2 в степени 3 = 8"""
+    assert power(2, 3) == 8
+
+def test_power_zero():
+    """Любое число в степени 0 = 1"""
+    assert power(5, 0) == 1
+
+def test_square_root():
+    """Корень из 9 = 3.0"""
+    assert square_root(9) == 3.0
+
+def test_square_root_negative():
+    """Корень из отрицательного числа должен вызвать ValueError"""
+    with pytest.raises(ValueError):
+        square_root(-1)
