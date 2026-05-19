@@ -107,35 +107,11 @@ jobs:
           # Версия pytest которая будет запускать тесты
 
 
-      # Генерация документации
-      # Автоматически создаём docs.md при каждом обновлении кода
-      - name: Generate documentation
+      # Генерация HTML документации из кода
+      - name: Generate HTML documentation
         run: |
-          echo "ГЕНЕРАЦИЯ ДОКУМЕНТАЦИИ"
-
-          echo "# Документация проекта" > docs.md
-          # > означает "создать файл / перезаписать полностью"
-
-          echo "" >> docs.md
-          echo "Сгенерировано автоматически: $(date)" >> docs.md
-          echo "Ветка: $GITHUB_REF_NAME" >> docs.md
-          echo "Коммит: $GITHUB_SHA" >> docs.md
-          # >> означает "дописать в конец файла"
-
-          echo "" >> docs.md
-          echo "## Функции калькулятора" >> docs.md
-          echo "- add(a, b) — сложение двух чисел" >> docs.md
-          echo "- subtract(a, b) — вычитание" >> docs.md
-          echo "- multiply(a, b) — умножение" >> docs.md
-          echo "- divide(a, b) — деление (ошибка при делении на 0)" >> docs.md
-          echo "- power(base, exp) — возведение в степень" >> docs.md
-
-          echo "" >> docs.md
-          echo "## Статус тестов" >> docs.md
-          echo "Все тесты успешно прошли на момент генерации." >> docs.md
-
-          echo "Файл docs.md создан. Содержимое:"
-          cat docs.md
-          # cat — выводит содержимое файла в лог.
-          # Так мы видим в логах Actions что именно было сгенерировано.
-          echo "Документация сгенерирована успешно"
+          pip install pdoc
+          mkdir -p docs
+          pdoc calculator.py --output-dir docs
+          echo "HTML документация сгенерирована в папке docs/"
+          ls -la docs/
