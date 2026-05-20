@@ -1,63 +1,144 @@
-name: CI/CD Pipeline
+# GitHub Actions — встроенная система автоматизации GitHub.
+# Этот файл описывает весь CI/CD процесс проекта.
+# GitHub читает его при каждом коммите и запускает всё что здесь написано.
 
+name: CI/CD Pipeline  # Название pipeline — отображается во вкладке Actions
+
+# ТРИГГЕРЫ — когда запускать pipeline
 on:
   push:
     branches: [ main, development, release ]
+    # Запускается автоматически при каждом коммите в эти ветки.
   pull_request:
     branches: [ main ]
+    # Запускается при создании Pull Request в main.
+    # Это защита: CI проверит тесты до того как код попадёт в main.
+    # Если тесты упадут — merge будет заблокирован.
 
+# ПРАВА ДОСТУПА для GitHub Actions
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read   # Разрешение читать код репозитория
+  pages: write     # Разрешение публиковать на GitHub Pages
+  id-token: write  # Разрешение для авторизации при деплое на Pages
 
+# JOBS — задачи которые выполняются в pipeline
+# Каждый job запускается на отдельной чистой виртуальной машине
 jobs:
+
+  # JOB 1: ТЕСТИРОВАНИЕ И ГЕНЕРАЦИЯ ДОКУМЕНТАЦИИ
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    # GitHub поднимает чистую виртуальную машину с Ubuntu.
+    # На ней нет ничего лишнего — только базовая ОС.
+    # Это гарантирует что тесты работают не только "у меня на компе",
+    # а в чистом окружении — как у любого другого разработчика.
+
     steps:
+    # Шаги выполняются строго по порядку.
+    # Если один шаг упал — все следующие не запускаются,
+    # и весь job считается проваленным.
+
+      # 1. Скачать код репозитория на виртуальную машину
       - name: Checkout repository
         uses: actions/checkout@v4
+        # "uses" — использовать готовый плагин (Action).
+        # actions/checkout@v4 — официальный плагин от GitHub.
+        # Делает git clone репозитория на виртуальную машину.
+        # БЕЗ этого шага на машине нет никакого кода вообще.
 
+      # 2. Установить Python нужной версии
       - name: Set up Python
         uses: actions/setup-python@v5
+        # Официальный плагин для установки Python.
+        # На чистой Ubuntu может стоять устаревшая версия,
+        # поэтому явно указываем нужную.
         with:
           python-version: '3.11'
+          # with — параметры для плагина.
+          # Фиксируем версию Python чтобы поведение было
+          # одинаковым при каждом запуске pipeline.
 
+      # 3. Установить зависимости проекта
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          # pip — менеджер пакетов Python.
+          # Сначала обновляем сам pip до последней версии.
           pip install pytest pdoc
+          # pytest — библиотека для запуска тестов.
+          # pdoc — библиотека для генерации HTML документации
+          # из docstrings (комментариев) в коде.
 
+      # 4. Запустить все тесты — главный шаг
       - name: Run unit tests
         run: pytest test_calculator.py -v
+        # pytest находит все функции начинающиеся с test_
+        # и запускает их автоматически.
+        # Флаг -v (verbose) — подробный вывод:
+        #   PASSED = тест прошёл ЗЕЛЕНАЯ ГАЛОЧКА
+        #   FAILED = тест упал КРАСНЫЙ КРЕЕСТ
+        # Если хоть один тест FAILED — job провалился,
+        # второй job (deploy) не запустится.
 
+      # 5. Вывести информацию об окружении в лог
       - name: Print environment info
         run: |
           echo "Ветка: $GITHUB_REF_NAME"
+          # GITHUB_REF_NAME — имя ветки которая запустила pipeline
           echo "Коммит: $GITHUB_SHA"
+          # GITHUB_SHA — хэш коммита, уникальный идентификатор
+          # позволяет точно знать какой код был протестирован
           echo "Запустил: $GITHUB_ACTOR"
+          # Имя пользователя GitHub который сделал коммит
           echo "Версия Python: $(python --version)"
+          # Подтверждаем что нужная версия Python установлена
 
+      # 6. Сгенерировать HTML документацию из кода
       - name: Generate HTML documentation
         run: |
           pdoc calculator.py --output-dir docs
+          # pdoc читает docstrings ("""текст""") из calculator.py
+          # и автоматически создаёт HTML страницу в папке docs/.
+          # Это означает что документация всегда актуальна —
+          # она генерируется прямо из комментариев в коде.
           echo "Документация сгенерирована"
           ls -la docs/
+          # ls -la — показывает список созданных файлов в папке docs/
+          # Так видно в логах что файлы реально создались.
 
+      # 7. Передать папку docs/ для публикации на GitHub Pages
       - name: Upload docs artifact
         uses: actions/upload-pages-artifact@v3
+        # Специальный плагин — упаковывает папку docs/
+        # и передаёт её следующему job-у (deploy).
+        # Это не обычный артефакт для скачивания —
+        # это именно передача данных между job-ами.
         with:
-          path: docs/
+          path: docs/  # Передаём папку docs/ которую создал pdoc
 
+  # JOB 2: ПУБЛИКАЦИЯ ДОКУМЕНТАЦИИ
+  # Запускается ТОЛЬКО после успешного завершения job "test"
   deploy:
     name: Deploy Documentation
     needs: test
+    # needs: test означает — ждать пока job "test" не завершится успешно.
+    # Если тесты упали — этот job вообще не запустится.
+    # Документация публикуется только из рабочего кода.
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+      # Здесь будет отображаться ссылка на опубликованную документацию
+      # прямо в интерфейсе GitHub Actions после завершения job-а.
+
     steps:
+      # Опубликовать документацию на GitHub Pages
       - name: Deploy to GitHub Pages
-        id: deployment
+        id: deployment  # id нужен чтобы получить ссылку в поле url выше
         uses: actions/deploy-pages@v4
+        # Официальный плагин GitHub для публикации на Pages.
+        # Берёт артефакт от job "test" (папку docs/)
+        # и публикует его как сайт по адресу:
+        # https://luiza-khachatrian.github.io/cicd-lab/
+        # После этого документация доступна по ссылке всем желающим.
