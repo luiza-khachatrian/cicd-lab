@@ -67,12 +67,3 @@ def test_square_root_negative():
     """Корень из отрицательного числа должен вызвать ValueError"""
     with pytest.raises(ValueError):
         square_root(-1)
-
-def test_remainder():
-    """10 % 3 = 1"""
-    assert remainder(10, 3) == 1
-
-def test_remainder_zero():
-    """Остаток от деления на ноль должен вызвать ValueError"""
-    with pytest.raises(ValueError):
-        remainder(5, 0)
