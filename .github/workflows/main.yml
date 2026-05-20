@@ -41,7 +41,7 @@ jobs:
 
       - name: Generate HTML documentation
         run: |
-          pdoc calculator --output-dir docs
+          pdoc calculator.py --output-dir docs
           echo "Документация сгенерирована"
           ls -la docs/
 
