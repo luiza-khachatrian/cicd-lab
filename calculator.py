@@ -34,10 +34,3 @@ def square_root(number):
     if number < 0:
         raise ValueError("Квадратный корень из отрицательного числа не определён!")
     return number ** 0.5
-
-# НОВАЯ ФУНКЦИЯ — разработана в ветке development (для проверки автоматической генерации документации)
-def remainder(a, b):
-    """Остаток от деления a на b"""
-    if b == 0:
-        raise ValueError("Делитель не может быть равен нулю!")
-    return a % b
