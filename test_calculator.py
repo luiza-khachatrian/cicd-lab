@@ -2,7 +2,7 @@
 # pytest сам найдёт этот файл и запустит все функции начинающиеся с test_
 
 import pytest
-from calculator import add, subtract, multiply, divide, power, square_root, remainder
+from calculator import add, subtract, multiply, divide, power, square_root
 
 #Тесты для сложения
 def test_add_positive_numbers():
